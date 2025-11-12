@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simple E-Commerce Catalog</title>
+<style>
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    margin: 0;
+    background-color: #f2f7f5;
+  }
+
+  header {
+    background-color: #00897b;
+    color: white;
+    text-align: center;
+    padding: 15px;
+    font-size: 22px;
+    font-weight: 600;
+  }
+
+  nav {
+    background: #004d40;
+    color: white;
+    display: flex;
+    justify-content: space-around;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    height: 55px;
+    align-items: center;
+    font-size: 16px;
+  }
+
+  nav div {
+    cursor: pointer;
+  }
+
+  nav div.active {
+    font-weight: bold;
+    color: #a5d6a7;
+  }
+
+  #content {
+    padding-bottom: 70px;
+  }
+
+  .product-card {
+    background: white;
+    margin: 12px;
+    border-radius: 8px;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px;
+  }
+
+  .product-card img {
+    width: 60px;
+    height: 60px;
+    border-radius: 6px;
+  }
+
+  .product-info {
+    flex: 1;
+    margin-left: 12px;
+  }
+
+  .product-info h3 {
+    margin: 0;
+    font-size: 17px;
+  }
+
+  .product-info p {
+    margin: 3px 0;
+    color: #555;
+  }
+
+  .add-btn {
+    color: #00897b;
+    font-size: 22px;
+    cursor: pointer;
+  }
+
+  .cart-empty {
+    text-align: center;
+    padding: 40px;
+    font-size: 18px;
+    color: #666;
+  }
+
+  .cart-card {
+    background: white;
+    margin: 10px;
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .cart-total {
+    text-align: center;
+    padding: 16px;
+    font-weight: bold;
+    font-size: 18px;
+    border-top: 2px solid #ccc;
+    background: #e0f2f1;
+  }
+
+  /* Drawer */
+  #drawer {
+    position: fixed;
+    left: -250px;
+    top: 0;
+    width: 250px;
+    height: 100%;
+    background: #004d40;
+    color: white;
+    transition: left 0.3s ease;
+    z-index: 5;
+    padding-top: 20px;
+  }
+
+  #drawer.open {
+    left: 0;
+  }
+
+  #drawer h2 {
+    text-align: center;
+    font-size: 20px;
+    padding: 10px 0;
+    border-bottom: 1px solid #00796b;
+  }
+
+  .drawer-item {
+    padding: 14px 20px;
+    border-bottom: 1px solid #00796b;
+    cursor: pointer;
+  }
+
+  .drawer-item:hover {
+    background: #00695c;
+  }
+
+  #overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.4);
+    z-index: 4;
+  }
+
+  #overlay.show {
+    display: block;
+  }
+
+  .menu-btn {
+    position: absolute;
+    left: 10px;
+    top: 12px;
+    font-size: 22px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="menu-btn" onclick="toggleDrawer()">☰</span>
+  Simple E-Commerce Catalog
+</header>
+
+<div id="drawer">
+  <h2>E-Commerce Menu</h2>
+  <div class="drawer-item" onclick="showPage(0); toggleDrawer()">🛍️ Shop</div>
+  <div class="drawer-item" onclick="showPage(1); toggleDrawer()">🛒 Cart</div>
+  <div class="drawer-item" onclick="showAbout(); toggleDrawer()">ℹ️ About</div>
+</div>
+<div id="overlay" onclick="toggleDrawer()"></div>
+
+<div id="content"></div>
+
+<nav>
+  <div id="tab-shop" class="active" onclick="showPage(0)">Products</div>
+  <div id="tab-cart" onclick="showPage(1)">Cart</div>
+</nav>
+
+<script>
+  const products = [
+    { name: "Smartphone", price: 499.99, image: "https://cdn-icons-png.flaticon.com/512/1063/1063190.png" },
+    { name: "Headphones", price: 89.99, image: "https://cdn-icons-png.flaticon.com/512/1063/1063197.png" },
+    { name: "Laptop", price: 899.99, image: "https://cdn-icons-png.flaticon.com/512/1063/1063192.png" },
+    { name: "Smart Watch", price: 199.99, image: "https://cdn-icons-png.flaticon.com/512/1063/1063195.png" },
+  ];
+
+  let cart = {};
+  let currentPage = 0;
+
+  const content = document.getElementById("content");
+
+  function renderProducts() {
+    content.innerHTML = "";
+    products.forEach(p => {
+      const div = document.createElement("div");
+      div.className = "product-card";
+      div.innerHTML = `
+        <img src="${p.image}" alt="${p.name}">
+        <div class="product-info">
+          <h3>${p.name}</h3>
+          <p>$${p.price.toFixed(2)}</p>
+        </div>
+        <div class="add-btn" onclick="addToCart('${p.name}')">🛒</div>
+      `;
+      content.appendChild(div);
+    });
+  }
+
+  function renderCart() {
+    content.innerHTML = "";
+    const keys = Object.keys(cart);
+    if (keys.length === 0) {
+      content.innerHTML = `<div class="cart-empty">Your cart is empty 😢</div>`;
+      return;
+    }
+
+    let total = 0;
+    keys.forEach(name => {
+      const product = products.find(p => p.name === name);
+      const qty = cart[name];
+      const price = product.price * qty;
+      total += price;
+
+      const item = document.createElement("div");
+      item.className = "cart-card";
+      item.innerHTML = `
+        <div>
+          <strong>${name}</strong><br>
+          Quantity: ${qty}
+        </div>
+        <div>$${price.toFixed(2)}</div>
+      `;
+      content.appendChild(item);
+    });
+
+    const totalDiv = document.createElement("div");
+    totalDiv.className = "cart-total";
+    totalDiv.innerText = `Total: $${total.toFixed(2)}`;
+    content.appendChild(totalDiv);
+  }
+
+  function addToCart(name) {
+    cart[name] = (cart[name] || 0) + 1;
+    alert(`${name} added to cart!`);
+  }
+
+  function showPage(index) {
+    currentPage = index;
+    document.getElementById("tab-shop").classList.toggle("active", index === 0);
+    document.getElementById("tab-cart").classList.toggle("active", index === 1);
+    index === 0 ? renderProducts() : renderCart();
+  }
+
+  function toggleDrawer() {
+    const drawer = document.getElementById("drawer");
+    const overlay = document.getElementById("overlay");
+    drawer.classList.toggle("open");
+    overlay.classList.toggle("show");
+  }
+
+  function showAbout() {
+    alert("Simple E-Commerce App\nVersion 1.0.0\nCreated with ❤️ using HTML + JS");
+  }
+
+  // Initial render
+  renderProducts();
+</script>
+
+</body>
+</html>
